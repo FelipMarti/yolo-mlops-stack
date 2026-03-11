@@ -1,0 +1,16 @@
+numpy>=2.2.6,<2.5
+opencv-python-headless==4.13.0.92
+pillow==12.1.1
+requests==2.32.5
+torch==2.10.0     
+torchvision==0.25.0   
+ultralytics==8.4.21
+
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
+
+prometheus-client==0.20.0
+pynvml==11.5.0
+
+structlog==24.1.0
