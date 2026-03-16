@@ -1,0 +1,41 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set tag
+        run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build \
+          -f docker/Dockerfile \
+          -t yolo-api:$IMAGE_TAG \
+          .
+
+      - name: Run container (smoke test)
+        run: |
+          set -e
+          docker run -d -p 8000:8000 --name yolo-test yolo-api:$IMAGE_TAG
+          sleep 10
+          docker ps
+          docker logs yolo-test
+
+      - name: Test API
+        run: |
+          sleep 10
+          curl --fail http://localhost:8000/docs
+        
