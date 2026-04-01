@@ -7,7 +7,7 @@ import time
 from ultralytics import YOLO
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_PATH = os.getenv("MODEL_PATH", "/models/best.pt")
+MODEL_PATH = os.getenv("MODEL_PATH", "/models/yolo11n.pt")
 
 model = YOLO(str(MODEL_PATH))
 
