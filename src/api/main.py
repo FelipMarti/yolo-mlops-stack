@@ -33,29 +33,35 @@ async def predict(file: UploadFile = File(...)):
 
     start = time.perf_counter()
 
-    image_bytes = await file.read()
+    try:
+        image_bytes = await file.read()
 
-    image = load_bytes(image_bytes)
+        image = load_bytes(image_bytes)
 
-    detections, inference_time = await run_in_threadpool(run_inference, image)
+        detections, inference_time = await run_in_threadpool(run_inference, image)
 
-    INFERENCE_TIME.observe(inference_time)
-    INFERENCE_COUNT.inc()
-    DETECTIONS.inc(len(detections))
+        INFERENCE_TIME.labels(MODEL_VERSION).observe(inference_time)
+        INFERENCE_COUNT.labels(MODEL_VERSION).inc()
+        DETECTIONS.labels(MODEL_VERSION).inc(len(detections))
 
-    latency = time.perf_counter() - start
-    REQUEST_LATENCY.labels("/predict").observe(latency)
+        latency = time.perf_counter() - start
+        REQUEST_LATENCY.labels("/predict").observe(latency)
 
-    logger.info(
-        "inference_completed",
-        detections=len(detections),
-        inference_time=inference_time,
-    )
+        logger.info(
+            "inference_completed",
+            detections=len(detections),
+            inference_time=inference_time,
+        )
 
-    return {
-        "detections": detections,
-        "inference_time": inference_time,
-    }
+        return {
+            "detections": detections,
+            "inference_time": inference_time,
+        }
+
+    except Exception as e:
+        ERROR_COUNT.labels("/predict").inc()
+        logger.exception("prediction_failed", error=str(e))
+        return {"error": str(e)}
 
 
 @app.post("/predict/url")

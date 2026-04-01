@@ -1,6 +1,13 @@
 from prometheus_client import Counter, Histogram, Gauge
 from pynvml import *
 
+# --- INIT NVML ONCE ---
+try:
+    nvmlInit()
+    NVML_AVAILABLE = True
+except Exception:
+    NVML_AVAILABLE = False
+
 # HTTP
 REQUEST_COUNT = Counter(
     "http_requests_total",
@@ -14,20 +21,31 @@ REQUEST_LATENCY = Histogram(
     ["endpoint"],
 )
 
-# ML
+ERROR_COUNT = Counter(
+    "http_errors_total",
+    "Total HTTP errors",
+    ["endpoint"],
+)
+
+# ML (WITH MODEL VERSION)
+MODEL_VERSION = os.getenv("MODEL_VERSION", "unknown")
+
 INFERENCE_TIME = Histogram(
     "yolo_inference_seconds",
     "Time spent running YOLO inference",
+    ["model_version"],
 )
 
 INFERENCE_COUNT = Counter(
     "yolo_inference_total",
     "Total number of inferences",
+    ["model_version"],
 )
 
 DETECTIONS = Counter(
     "yolo_detections_total",
     "Total detections produced",
+    ["model_version"],
 )
 
 # GPU
@@ -43,10 +61,10 @@ GPU_UTILIZATION = Gauge(
 
 
 def update_gpu_metrics():
+    if not NVML_AVAILABLE:
+        return
 
     try:
-        nvmlInit()
-
         handle = nvmlDeviceGetHandleByIndex(0)
 
         mem = nvmlDeviceGetMemoryInfo(handle)
